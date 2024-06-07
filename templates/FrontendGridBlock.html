@@ -1,0 +1,49 @@
+<style>
+    .grid-section {
+        margin: 20px 0;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+    }
+    .section-title {
+        font-size: 24px;
+        margin-bottom: 10px;
+        color: #333;
+    }
+    .grid-content {
+        margin-top: 10px;
+    }
+    .grid-content table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .grid-content table, .grid-content th, .grid-content td {
+        border: 1px solid #ddd;
+    }
+    .grid-content th, .grid-content td {
+        padding: 8px;
+        text-align: left;
+    }
+    .grid-content th {
+        background-color: #f2f2f2;
+    }
+</style>
+
+
+
+<div class="grids-section">
+    {foreach $gfo_grids as $grid}
+        <div class="grid-section">
+            <h2 class="section-title">{$grid.name|escape}</h2>
+            <div class="grid-content">
+                {$grid.content}
+            </div>
+        </div>
+    {/foreach}
+</div>
+    
+   
+        
+        
+ 

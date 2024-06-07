@@ -1,0 +1,38 @@
+<h1>Новая таблица</h1>
+<form  class="tfo-set-create-form" action="?plugin=gridfo&module=grid&action=createConfirm">
+    <div class="field">
+        <div class="name">Имя</div>
+        <div class="value">
+            <input type="text" name="grid[name]" value="">
+            <input type="hidden" name="grid[product_id]" value="{$product_id}">
+        </div>
+    </div>
+    <div class="field">
+        <input type="submit" value="сохранить" class="button green">
+        <span class="form-message" style="display: none;"></span>
+    </div>
+</form>
+
+{literal}
+<script type="text/javascript">
+    (function($) {
+        $.gridfoSetCreate = {
+            form: null,
+            init: function() {
+                this.form = $('.tfo-set-create-form');
+                const self = this;
+                $.gridfoControl.setActiveBlock("?plugin=gridfo&module=grid&action=create");
+
+                this.form.fSend(function(jData) {
+                    $.gridfoControl.updateSet(jData['data']['grid']);
+                    return;
+                })
+            },
+        }
+    })(jQuery);
+    $(document).ready(function() {
+        $.gridfoSetCreate.init();
+    })
+
+</script>
+{/literal}

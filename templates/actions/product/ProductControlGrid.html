@@ -1,0 +1,191 @@
+<link rel="stylesheet" type="text/css" href="{$wa_app_static_url}plugins/gridfo/css/control.css?v=1.1">
+<link rel="stylesheet" type="text/css" href="{$wa_app_static_url}plugins/gridfo/css/datatables.css">
+<link rel="stylesheet" type="text/css" href="{$wa_app_static_url}plugins/gridfo/css/select2.css">
+<script type="text/javascript" src="{$wa_app_static_url}plugins/gridfo/js/cookie.js"></script>
+<script type="text/javascript" src="{$wa_app_static_url}plugins/gridfo/js/fsend.js"></script>
+<script type="text/javascript" src="{$wa_app_static_url}plugins/gridfo/js/fsortable.js"></script>
+<script type="text/javascript" src="{$wa_app_static_url}plugins/gridfo/js/gofileupload.js"></script>
+<script type="text/javascript" src="{$wa_app_static_url}plugins/gridfo/js/bpopup.js"></script>
+<script type="text/javascript" src="{$wa_app_static_url}plugins/gridfo/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="{$wa_app_static_url}plugins/gridfo/js/jquery.dataTables.reload.plugin.js"></script>
+<script type="text/javascript" src="{$wa_app_static_url}plugins/gridfo/js/select2.js"></script>
+<script type="text/javascript" src="{$wa_app_static_url}plugins/gridfo/js/select2_locale_ru.js"></script>
+<script type="text/javascript" src="{$wa_app_static_url}plugins/gridfo/js/ckeditor/build/ckeditor.js"></script>
+<style>
+        .sidebar {
+            float: left;
+            width: 200px;
+            background: #f0f0f0;
+        }
+        .gfo-ajax {
+            padding: 20px;
+            border: 1px solid #ccc;
+            min-height: 200px;
+        }
+        .gfo-ajax {
+            width: auto; 
+            height: auto;
+            overflow: auto;
+        }
+        
+</style>
+ 
+<div class="sidebar gfo-sidebar" data-id="{$product_id|escape}" style="width: 200px;">
+   
+    <div class="block">
+        <ul class="menu-v with-icons">
+            <li class="bottom-padded">
+                <a class="gfo-link" href="?plugin=gridfo&module=grid&action=create" data-post="product_id={$product_id|escape}">
+                    <i class="icon16 add"></i>Новая таблица
+                </a>
+            </li>
+        </ul>
+
+        <h5 class="heading">Таблицы</h5>
+        <ul id="sortable" class="menu-v with-icons">
+            {foreach $girds as $grid_id => $gird}
+                <li id={$grid_id|escape} data-id={$grid_id|escape}>
+                    <a class="gfo-link" href="?plugin=gridfo&module=grid&action=edit&id={$grid_id|escape}" data-post="product_id={$product_id|escape}">
+                        <i class="icon16 sort"></i>
+                        <span>{$gird['name']|escape}</span>
+                    </a>
+                </li>
+            {/foreach}
+        </ul>
+    </div>
+</div>
+<div class="content left250px">
+    <div class="block double-padded gfo-ajax">
+        <i class="icon16 loading"></i>
+    </div>
+</div>
+
+
+
+{literal}
+<script type="text/javascript">
+(function($) {
+    $.gridfoControl = {
+        navLinkClass: null,
+        product_id: null,
+        ajaxContent: null,
+        menu: null,
+        setMenu: null,
+        popup: null,
+        editor: null,
+        init: function() {
+            var self = this;
+            this.ajaxContent = $('.gfo-ajax');
+            this.menu = $('.gfo-sidebar');
+            this.product_id = this.menu.attr('data-id');
+            this.setMenu = $("#sortable");
+            this.popup = $('.gfo-popup');
+            this.navLinkClass = '.gfo-link';
+            this.editor = {};
+
+            this.setMenu.sortable({
+                update: function() {
+                    self.setsSort();
+                }
+            }).disableSelection();
+
+            this.initPage();
+            this.initMenu();
+            
+        },
+
+        initPage: function() {
+            var self = this;
+            var cookie_product_id = $.cookie('gfo_product_id');
+            if(cookie_product_id == self.product_id) {
+                var u = $.cookie('gfo_url');
+                var p = $.cookie('gfo_post');
+                if(u) {
+                    $.post(u, p, function(jData) {
+                        self.ajaxContent.html(jData);
+                    });
+                    return;
+                }
+            }
+            
+            
+            u = '?plugin=gridfo&module=grid&action=create';
+           
+            $.post(u, function(jData) {
+                $.cookie('gfo_url', u, { expires: 365 });
+                $.cookie('gfo_product_id', self.product_id, { expires: 365 });
+                self.ajaxContent.html(jData);
+            });
+
+            return false;
+        },
+
+
+        initMenu: function() {
+            var self = this;
+            $('body').off('click', this.navLinkClass);
+
+            $('body').on('click', this.navLinkClass, function() {
+                var t = $(this);
+                var u = t.attr('href');
+                var p = t.attr('data-post');
+                if(typeof(p) == 'undefined') {
+                    p = '';
+                }
+                $.post(u, p, function(jData) {
+                    if(u !== $.cookie('gfo_url') || p !== $.cookie('gfo_post')){
+                        $.cookie('gfo_url', u, { expires: 365 });
+                        $.cookie('gfo_product_id', self.product_id, { expires: 365 });
+                        $.cookie('gfo_post', p, { expires: 365 });
+                    }
+                    self.ajaxContent.html(jData);
+                });
+                
+                return false;
+            });
+        },
+
+        updateSet: function(item) {
+			var self = this;
+			var target = this.setMenu.find(`li[data-id=${item.id}]`);
+			if(target.length) {
+				target.find('span').text(item.name);
+			} else {
+				this.setMenu.append(`\
+					<li id=${self.escapeHtml(item.id)} data-id=${self.escapeHtml(item.id)}>\
+                        <a class="gfo-link" href="?plugin=gridfo&module=grid&action=edit&id=${item.id}" data-post="id=${self.escapeHtml(item.product_id)}">\
+							<i class="icon16 sort"></i>\
+							<span>${self.escapeHtml(item.name)}</span>\
+						</a>\
+					</li>\
+				`);
+			}
+        },
+
+        setsSort: function() {
+			const grids =`grids= ${$('#sortable').sortable("toArray").join(',')}`;
+			$.ajax({
+				method: 'post',
+				url: '?plugin=gridfo&module=grid&action=sort',
+				data: grids,
+			}, 'json')
+		},
+        
+        setActiveBlock: function(url) {
+            this.menu.find('li').removeClass('selected');
+            this.menu.find(`a[href='${url}']`).parent().addClass('selected');
+        },
+        
+        escapeHtml: function(string) {
+            return $("<div />").text(string).html();
+        },
+        isValidFilename: function(filename) {
+            return /^[^/?*.:;{}\\]+$/.test(filename);
+        }
+    }
+})(jQuery);
+$(document).ready(function() {
+    $.gridfoControl.init();
+})
+</script>
+{/literal}

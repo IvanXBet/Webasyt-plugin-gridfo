@@ -1,0 +1,336 @@
+<style>
+    .btn {
+        padding: 10px 20px;
+        font-size: 16px;
+        border-radius: 5px;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-save {
+        background-color: #4CAF50;
+        color: white;
+    }
+
+    .btn-save:hover {
+        background-color: #45a049;
+    }
+
+    .gfo-blocks {
+        padding: 20px;
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        margin: 0 auto;
+    }
+
+    .value {
+        margin-bottom: 20px;
+    }
+
+</style>
+<div class="gfo-blocks" data-gridId="{$grid['id']|escape}">
+    <h1 class="gfo-griid-title">Таблица: {$grid['name']|escape}</h1>
+
+    <ul class="menu-h mt15 gfo-menu" >
+        <li class="selected" data-block="grid"><a>Таблица</a></li>
+        <li data-block="rename" ><a>Изменить имя</a></li>
+        <li data-block="delete" ><a>Удалить</a></li>
+    </ul>
+
+    <div class="gfo-block"  data-block="grid">
+        <div class="value">
+            <div id="gfo-table-{$grid['id']|escape}"></div>
+        </div>
+
+        <button id="gfo-save-table" class="btn btn-save">Сохранить</button>
+        <span class="gfo-message mt15" style="display: block;"></span>
+    </div>
+
+    <div class="gfo-block hidden"  data-block="rename" >
+        <form class="gfo-gird-edit-form"  action="?plugin=gridfo&module=grid&action=editName">
+            <input type="hidden" name="grid[id]" value="{$grid['id']|escape}">
+    
+            <div class="field">
+                <div class="name">Новое имя</div>
+                <div class="value">
+                    <input type="text" name="grid[name]" value="{$grid['name']|escape}"/>
+                </div>
+            </div>
+    
+            <div>
+                <input type="submit" class="button green" value="Изменить">
+                <span class="form-message mt15" style="display: block;"></span>
+            </div>
+        </form>
+    </div>
+
+    <div class="gfo-block hidden"  data-block="delete">
+        <form class="gfo-gird-remove-form" action="?plugin=gridfo&module=grid&action=delete">
+            <input type="hidden" name="grid[id]" value="{$grid['id']|escape}">
+            <input type="hidden" name="grid[name]" value="{$grid['name']|escape}"/>
+            <div class="name">Введите название таблицы для её удаления.</div>
+            
+            <div class="value mt15">
+                <input type="text" name="nameInput" value=""/>
+            </div>
+        
+            <div>
+                <input type="submit" class="button red mt15" value="Удалить">
+                <span class="form-message mt15" style="display: block;"></span>
+            </div>
+        </form>
+    </div>
+    
+</div>
+
+{literal}
+<script type="text/javascript">
+    (function($) {
+        $.gridfoGridEdit = {
+            gridId: null,
+            table: null,
+            editor: null,
+            menu: null,
+            block: null,
+            formEdit: null,
+            formEdit: null,
+            title: null,
+
+            init: function() {
+                const self = this;
+
+                this.gridId = $('.gfo-blocks').attr('data-gridId');
+                this.table = $(`#gfo-table-${this.gridId}`);
+                this.menu = $('.gfo-menu');
+                this.block = $('.gfo-block');
+                this.formEdit = $('.gfo-gird-edit-form');
+                this.formEdit = $('.gfo-gird-remove-form');
+                this.title = $('.gfo-griid-title');
+
+                $.gridfoControl.setActiveBlock(`?plugin=gridfo&module=grid&action=edit&id=${this.gridId}`);
+
+                this.initEditor();
+                this.initMenu();
+                this.initFormEdit();
+                this.initFormDelete();
+
+                $('#gfo-save-table').on('click', function() {
+                    var editorData = self.editor.getData();
+                    self.saveData(editorData);
+                });
+            },
+
+            initEditor: async function() {
+                const self = this;
+                let editorData = '';
+                let tableCreated = false;
+                
+                await $.post(`?plugin=gridfo&module=grid&action=getContent&id=${this.gridId}`,  function(jData) {
+                    if (jData.data.content) {
+                        editorData = jData.data.content;
+                    }
+                });
+
+                ClassicEditor.create(self.table[0], {initialData: editorData},{toolbar: [ 'insertTable']})
+                    .then(editor => {
+                        self.editor = editor;
+
+                        function countTables() {
+                            const root = editor.model.document.getRoot();
+                            const tables = Array.from(root.getChildren())
+                                .filter(child => child.is('element', 'table'));
+                            return tables.length;
+                        }
+
+                        editor.model.document.on('change:data', () => {
+                            self.checkTableCountAndDisableButton();
+                        });
+
+                        self.checkTableCountAndDisableButton();
+                    })
+                    
+                    .catch(error => {
+                        console.error('Ошибка инициализации CKEditor:', error);
+                    });
+            },
+
+            checkTableCountAndDisableButton: function() {
+                const root = this.editor.model.document.getRoot();
+                const tableCount = Array.from(root.getChildren())
+                    .filter(child => child.is('element', 'table')).length;
+
+                const insertTableCommand = this.editor.commands.get('insertTable');
+
+                if (insertTableCommand) {
+                    insertTableCommand.isEnabled = tableCount === 0;
+                }
+            },
+
+            saveData: function(content) {
+                const self = this;
+                $.ajax({
+                    url: '?plugin=gridfo&module=grid&action=updateContent',
+                    method: 'POST',
+                    data: {
+                        gridId: self.gridId,
+                        content: content
+                    },
+                    success: function(response) {
+                        console.log('Таблиц сохранена:', response);
+                        var m = $('.gfo-message');
+                        m.css('color', 'green');
+                        m.text(response.data[0].message).show();
+                        setTimeout(function() {
+                            m.hide(); 
+                        }, 5000);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Ошибка сохранения:', error);
+                        var m = $('.gfo-message');
+                        m.css('color', 'red');
+                        m.text('Ошибка сохранения:', error).show();
+                        setTimeout(function() {
+                            m.hide(); 
+                        }, 5000);
+                    }
+                });
+            },
+
+            initMenu: function() {
+                this.menu.on('click', (e) => {
+                    if($(e.target.parentNode).hasClass('selected')) {
+                        return;
+                    }
+                    else {
+                        this.menu.children().each(function(item){
+                            $(this).removeClass('selected');
+                        });
+                        $(e.target.parentNode).addClass('selected');
+
+                        this.block.each(function(item){
+                            $(this).hide();
+                        });
+
+                        this.block.each(function(item){
+                            if($(this).attr('data-block') == $(e.target.parentNode).attr('data-block')){
+                                $(this).show();
+                            }
+                        });
+                    }
+                    
+                })
+            },
+
+            initFormEdit: function() {
+                var self = this;
+
+                this.formEdit.submit(function() {
+                    console.log('sdf');
+                    var t = $(this);
+                    var m = t.find('.form-message');
+                    var filename = $("input[name='grid[name]']").prop('value');
+
+                    m.hide();
+                    
+                    if(!$.gridfoControl.isValidFilename(filename))
+                    {
+                        m.css('color', 'red');
+                        m.text("Название файла не должно содержать специальных символов: (\ / : * ? \" < > . |)").show();
+                        return false;
+                    }
+
+                    $.post(t.attr('action'), t.serialize(), function(jData) {
+                        if(jData.data.result == 1)
+                        {
+                            self.title.text(`Таблица: ${jData.data.grid.name}`);
+                            $.gridfoControl.updateSet(jData.data.grid);
+                            m.css('color', 'green');
+                            m.text(jData.data.message).show();
+                            setTimeout(function() {
+                                m.hide(); 
+                            }, 5000);
+                        }
+                        else 
+                        {
+                            m.css('color', 'red');
+                            m.text(jData.data.message).show();
+                        }
+
+                    }, 'json');
+
+                    return false;
+			    });
+            },
+
+            initFormDelete: function() {
+                var self = this;
+            
+                this.formEdit.submit(function() {
+                    var t = $(this);
+                    var m = t.find('.form-message');
+                    var filename = $("input[name='grid[name]']").prop('value');
+                    var filenameInput = $("input[name='nameInput']").prop('value'); 
+                    
+                    m.hide();
+                    console.log(filename, filenameInput)
+                    
+                    if(filename != filenameInput)
+                    {
+                        m.css('color', 'red');
+                        m.text("Имя файла введено не правильно").show();
+                        setTimeout(function() {
+                            m.hide(); 
+                        }, 5000);
+                        return false;
+                    }
+                    
+                    $.post(t.attr('action'), t.serialize(), function(jData) {
+                        console.log(jData)
+                        if(jData.data[0].result == 1)
+                        {
+                            u = '?plugin=gridfo&module=grid&action=create';
+                            $.gridfoControl.initPage();
+                        }
+                        else 
+                        {
+                            m.text(jData.data[0].message).show();
+                            setTimeout(function() {
+                                m.hide(); 
+                            }, 5000);
+                        }
+
+                    }, 'json');
+
+                    return false;
+                });
+            },
+
+            updateSort: function() {
+                const tiles =`tiles= ${$('#tiles-container').sortable("toArray").join(',')}`;
+                data = {
+                    tiles: tiles,
+                    set_id: this.setId
+                }
+                $.ajax({
+                    method: 'post',
+                    url: '?plugin=gridfo&module=tile&action=tileSort',
+                    data: data,
+                    success: function(jData) {
+                        console.log(jData);
+                    }
+                }, 'json')
+            }
+
+           
+        }
+        
+    })(jQuery);
+    $(document).ready(function() {
+        $.gridfoGridEdit.init();
+    })
+
+</script>
+{/literal}
+
