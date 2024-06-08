@@ -95,7 +95,7 @@
             menu: null,
             block: null,
             formEdit: null,
-            formEdit: null,
+            formDelete: null,
             title: null,
 
             init: function() {
@@ -106,7 +106,7 @@
                 this.menu = $('.gfo-menu');
                 this.block = $('.gfo-block');
                 this.formEdit = $('.gfo-gird-edit-form');
-                this.formEdit = $('.gfo-gird-remove-form');
+                this.formDelete = $('.gfo-gird-remove-form');
                 this.title = $('.gfo-griid-title');
 
                 $.gridfoControl.setActiveBlock(`?plugin=gridfo&module=grid&action=edit&id=${this.gridId}`);
@@ -133,7 +133,7 @@
                     }
                 });
 
-                ClassicEditor.create(self.table[0], {initialData: editorData},{toolbar: [ 'insertTable']})
+                ClassicEditor.create(self.table[0], {initialData: editorData, language: 'ru'},{toolbar: [ 'insertTable']})
                     .then(editor => {
                         self.editor = editor;
 
@@ -227,7 +227,6 @@
                 var self = this;
 
                 this.formEdit.submit(function() {
-                    console.log('sdf');
                     var t = $(this);
                     var m = t.find('.form-message');
                     var filename = $("input[name='grid[name]']").prop('value');
@@ -267,14 +266,13 @@
             initFormDelete: function() {
                 var self = this;
             
-                this.formEdit.submit(function() {
+                this.formDelete.submit(function() {
                     var t = $(this);
                     var m = t.find('.form-message');
                     var filename = $("input[name='grid[name]']").prop('value');
                     var filenameInput = $("input[name='nameInput']").prop('value'); 
                     
                     m.hide();
-                    console.log(filename, filenameInput)
                     
                     if(filename != filenameInput)
                     {
@@ -287,10 +285,13 @@
                     }
                     
                     $.post(t.attr('action'), t.serialize(), function(jData) {
-                        console.log(jData)
+                        console.log($.cookie('gfo_post'))
                         if(jData.data[0].result == 1)
                         {
                             u = '?plugin=gridfo&module=grid&action=create';
+                            $.cookie('gfo_url', u, { expires: 365 });
+                            
+                            $.gridfoControl.removeSet(jData.data[0].grid.id);
                             $.gridfoControl.initPage();
                         }
                         else 

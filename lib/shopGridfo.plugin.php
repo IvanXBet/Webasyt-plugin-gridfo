@@ -122,8 +122,10 @@ class shopGridfoPlugin  extends shopPlugin
 			{
 				$grid = $grid_model->getById($grid_id);
 				$grid_model->deleteById($grid_id);
-				unlink($path.'/'.$grid['id'].'.html');
-				$result[] = array('result' => 1, 'message' => 'Таблица удалена');
+				if(file_exists($path.'/'.$grid['id'].'.html')) {
+					unlink($path.'/'.$grid['id'].'.html');
+				}
+				$result[] = array('result' => 1, 'message' => 'Таблица удалена', 'grid' => $grid);
 			}
 			else
 			{
