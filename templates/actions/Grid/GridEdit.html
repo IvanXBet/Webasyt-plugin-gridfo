@@ -9,6 +9,7 @@
     }
 
     .btn-save {
+        margin-top: 20px;
         background-color: #4CAF50;
         color: white;
     }
@@ -19,15 +20,9 @@
 
     .gfo-blocks {
         padding: 20px;
-        background-color: #f9f9f9;
-        border: 1px solid #ddd;
-        border-radius: 10px;
         margin: 0 auto;
     }
 
-    .value {
-        margin-bottom: 20px;
-    }
 
 </style>
 <div class="gfo-blocks" data-gridId="{$grid['id']|escape}">
@@ -70,15 +65,16 @@
         <form class="gfo-gird-remove-form" action="?plugin=gridfo&module=grid&action=delete">
             <input type="hidden" name="grid[id]" value="{$grid['id']|escape}">
             <input type="hidden" name="grid[name]" value="{$grid['name']|escape}"/>
-            <div class="name">Введите название таблицы для её удаления.</div>
             
-            <div class="value mt15">
-                <input type="text" name="nameInput" value=""/>
-            </div>
-        
-            <div>
-                <input type="submit" class="button red mt15" value="Удалить">
-                <span class="form-message mt15" style="display: block;"></span>
+                <span class="hint">Введите название таблицы для её удаления.</span>
+                
+                <div class="value" style="margin-top: 10px;">
+                    <input type="text" name="nameInput" value=""/>
+                </div>
+            
+            <div style="margin-top: 10px;">
+                <input type="submit" class="button red " value="Удалить">
+                <span class="form-message " style="display: block;"></span>
             </div>
         </form>
     </div>
@@ -285,7 +281,6 @@
                     }
                     
                     $.post(t.attr('action'), t.serialize(), function(jData) {
-                        console.log($.cookie('gfo_post'))
                         if(jData.data[0].result == 1)
                         {
                             u = '?plugin=gridfo&module=grid&action=create';

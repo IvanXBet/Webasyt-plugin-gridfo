@@ -10,29 +10,18 @@
 <script type="text/javascript" src="{$wa_app_static_url}plugins/gridfo/js/jquery.dataTables.reload.plugin.js"></script>
 <script type="text/javascript" src="{$wa_app_static_url}plugins/gridfo/js/ckeditor/build/ckeditor.js"></script>
 <style>
-        .sidebar {
-            float: left;
-            width: 200px;
-            background: #f0f0f0;
-        }
-        .gfo-ajax {
-            padding: 20px;
-            border: 1px solid #ccc;
-            min-height: 200px;
-        }
-        .gfo-ajax {
-            width: auto; 
-            height: auto;
-            overflow: auto;
-        }
-        
+    .gfo-ajax {
+        width: auto; 
+        height: auto;
+        overflow: auto;
+    }
 </style>
  
 <div class="sidebar gfo-sidebar" data-id="{$product_id|escape}" style="width: 200px;">
    
     <div class="block">
         <ul class="menu-v with-icons">
-            <li class="bottom-padded">
+            <li >
                 <a class="gfo-link" href="?plugin=gridfo&module=grid&action=create" data-post="product_id={$product_id|escape}">
                     <i class="icon16 add"></i>Новая таблица
                 </a>
@@ -52,7 +41,7 @@
         </ul>
     </div>
 </div>
-<div class="content left250px">
+<div class="content left150px">
     <div class="block double-padded gfo-ajax">
         <i class="icon16 loading"></i>
     </div>
@@ -96,6 +85,7 @@
             var self = this;
             var cookie_product_id = $.cookie('gfo_product_id');
             if(cookie_product_id == self.product_id) {
+                
                 var u = $.cookie('gfo_url');
                 var p = $.cookie('gfo_post');
                 if(u) {
@@ -109,7 +99,7 @@
             
             u = '?plugin=gridfo&module=grid&action=create';
            
-            $.post(u, function(jData) {
+            $.post(u,{product_id: self.product_id}, function(jData) {
                 $.cookie('gfo_url', u, { expires: 365 });
                 $.cookie('gfo_product_id', self.product_id, { expires: 365 });
                 self.ajaxContent.html(jData);

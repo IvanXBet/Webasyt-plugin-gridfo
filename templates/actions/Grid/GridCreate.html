@@ -8,7 +8,7 @@
         </div>
     </div>
     <div class="field">
-        <input type="submit" value="сохранить" class="button green">
+        <input type="submit" value="Создать" class="button green">
         <span class="form-message" style="display: none;"></span>
     </div>
 </form>
@@ -24,7 +24,12 @@
                 $.gridfoControl.setActiveBlock("?plugin=gridfo&module=grid&action=create");
 
                 this.form.fSend(function(jData) {
+                    console.log(jData)
                     $.gridfoControl.updateSet(jData['data']['grid']);
+                    u = `?plugin=gridfo&module=grid&action=edit&id=${jData.data.grid.id}`;
+                    $.cookie('gfo_url', u, { expires: 365 });
+                    
+                    $.gridfoControl.initPage();
                     return;
                 })
             },
